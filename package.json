@@ -1,8 +1,9 @@
 {
   "name": "github-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for GitHub — manage repos, READMEs, descriptions, and profile",
+  "description": "A GitHub MCP server that lets Claude manage GitHub repos, files, and profile",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -10,12 +11,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "axios": "^1.6.0",
-    "zod": "^3.22.0"
+    "@octokit/rest": "^20.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0",
+    "typescript": "^5.0.0",
     "ts-node": "^10.9.0"
   }
 }
