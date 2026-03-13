@@ -1,35 +1,63 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { getProfile, updateProfile } from "../services/github.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { octokit, handleGitHubError } from '../services/github.js';
 
-export function registerProfileTools(server: McpServer, getToken: () => string): void {
+export function registerProfileTools(server: McpServer) {
 
-  server.registerTool("github_get_profile", {
-    title: "Get GitHub Profile",
-    description: "Get the authenticated user's GitHub profile.",
-    inputSchema: z.object({}).strict(),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, async () => {
-    const p = await getProfile(getToken());
-    const text = `## @${p.login}\n- **Name**: ${p.name || "_not set_"}\n- **Bio**: ${p.bio || "_not set_"}\n- **Location**: ${p.location || "_not set_"}\n- **Blog**: ${p.blog || "_not set_"}\n- **Followers**: ${p.followers} | **Following**: ${p.following}\n- **Public Repos**: ${p.public_repos}`;
-    return { content: [{ type: "text" as const, text }] };
-  });
+  server.tool(
+    'github_get_profile',
+    'Get the authenticated GitHub user profile',
+    {},
+    async () => {
+      try {
+        const { data } = await octokit.users.getAuthenticated();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({
+            login: data.login,
+            name: data.name,
+            bio: data.bio,
+            location: data.location,
+            email: data.email,
+            blog: data.blog,
+            twitter_username: data.twitter_username,
+            public_repos: data.public_repos,
+            followers: data.followers,
+            following: data.following,
+            avatar_url: data.avatar_url,
+            html_url: data.html_url,
+          }, null, 2) }],
+        };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 
-  server.registerTool("github_update_profile", {
-    title: "Update GitHub Profile",
-    description: "Update your GitHub profile: name, bio, location, website, email, or Twitter.",
-    inputSchema: z.object({
+  server.tool(
+    'github_update_profile',
+    'Update GitHub profile: name, bio, location, website, email, or Twitter username',
+    {
       name: z.string().optional(),
-      bio: z.string().max(160).optional(),
-      blog: z.string().optional(),
+      bio: z.string().optional(),
       location: z.string().optional(),
-      email: z.string().email().optional(),
+      blog: z.string().optional().describe('Website or blog URL'),
+      email: z.string().optional(),
       twitter_username: z.string().optional(),
-    }).strict(),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  }, async (updates) => {
-    await updateProfile(getToken(), updates);
-    const changes = Object.entries(updates).filter(([, v]) => v !== undefined).map(([k, v]) => `- **${k}**: ${v}`).join("\n");
-    return { content: [{ type: "text" as const, text: `✅ Profile updated!\n\n${changes}` }] };
-  });
+    },
+    async ({ name, bio, location, blog, email, twitter_username }) => {
+      try {
+        await octokit.users.updateAuthenticated({
+          ...(name && { name }),
+          ...(bio && { bio }),
+          ...(location && { location }),
+          ...(blog && { blog }),
+          ...(email && { email }),
+          ...(twitter_username && { twitter_username }),
+        });
+        return { content: [{ type: 'text' as const, text: 'Profile updated successfully.' }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 }

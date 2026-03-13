@@ -1,90 +1,97 @@
-# 🐙 GitHub MCP Server
+# 🔌 GitHub MCP Server v2.0
 
-A **Model Context Protocol (MCP)** server that lets Claude AI interact directly with GitHub — manage repositories, read files, push code, and view your profile.
+> A powerful Model Context Protocol (MCP) server for **GitHub** and **Google Calendar** automation — built with TypeScript
 
----
-
-## 🚀 Features
-
-- 👤 **Get Profile** — Fetch your authenticated GitHub profile
-- 📁 **List Repos** — List all repositories for any user
-- ➕ **Create Repo** — Create new GitHub repositories
-- 📄 **Read File** — Read any file from a repository
-- 📤 **Push File** — Create or update files in a repository
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![MCP](https://img.shields.io/badge/MCP-SDK-blueviolet?style=flat-square)
+![GitHub API](https://img.shields.io/badge/GitHub-API-181717?style=flat-square&logo=github)
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Tools (14 total)
 
-- **TypeScript**
-- **@modelcontextprotocol/sdk**
-- **@octokit/rest** (GitHub API)
-- **Node.js**
+### 🗂️ Repo Tools
+| Tool | Description |
+|---|---|
+| `github_list_repos` | List all repos for any user |
+| `github_get_repo` | Get detailed repo info |
+| `github_create_repo` | Create a new repo |
+| `github_update_repo` | Rename, add description & topics |
+| `github_set_repo_visibility` | Make repo public or private |
+| `github_delete_repo` | Permanently delete a repo |
+| `github_list_branches` | List all branches |
+
+### 📁 File Tools
+| Tool | Description |
+|---|---|
+| `github_read_file` | Read any file from a repo |
+| `github_write_file` | Create or update a single file |
+| `github_push_files` | Push multiple files in one commit (Git Trees API) |
+| `github_create_repo_readme` | Auto-generate a professional README |
+
+### 👤 Profile Tools
+| Tool | Description |
+|---|---|
+| `github_get_profile` | View your GitHub profile |
+| `github_update_profile` | Update bio, location, website, Twitter |
+
+### 📅 Google Calendar Tools
+| Tool | Description |
+|---|---|
+| `calendar_list_events` | List upcoming calendar events |
+| `calendar_create_meeting` | Create a meeting with Google Meet link |
+| `calendar_delete_event` | Delete an event by ID |
 
 ---
 
-## ⚙️ Setup
+## 🚀 Setup
 
-### 1. Clone the repository
+### 1. Clone & Install
 ```bash
 git clone https://github.com/Paras1Chauhan/github-mcp-server.git
 cd github-mcp-server
-```
-
-### 2. Install dependencies
-```bash
 npm install
 ```
 
-### 3. Configure environment
-```bash
-cp .env.example .env
-# Add your GitHub Personal Access Token to .env
-```
-
-> Generate a token at: https://github.com/settings/tokens  
-> Required scopes: `repo`, `read:user`, `user:email`
-
-### 4. Build and run
+### 2. Build
 ```bash
 npm run build
-npm start
 ```
 
----
+### 3. Configure Claude Desktop
 
-## 🔌 Claude Desktop Integration
-
-Add this to your `claude_desktop_config.json`:
+Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac):
 
 ```json
 {
   "mcpServers": {
     "github": {
       "command": "node",
-      "args": ["/path/to/github-mcp-server/dist/index.js"],
+      "args": ["C:\\Users\\YourName\\github-mcp-server\\dist\\index.js"],
       "env": {
-        "GITHUB_TOKEN": "your_github_token_here"
+        "GITHUB_TOKEN": "ghp_your_token_here",
+        "GITHUB_USERNAME": "YourUsername",
+        "GOOGLE_ACCESS_TOKEN": "your_google_token_here"
       }
     }
   }
 }
 ```
 
----
+### 4. GitHub Token Scopes Required
+- ✅ `repo` — full repo access
+- ✅ `user` — update profile
+- ✅ `delete_repo` — delete repos
 
-## 📌 Available Tools
-
-| Tool | Description |
-|------|-------------|
-| `get_profile` | Get authenticated user's GitHub profile |
-| `list_repos` | List repos for a user |
-| `create_repo` | Create a new repository |
-| `read_file` | Read a file from a repo |
-| `push_file` | Push/update a file in a repo |
+Get your token → [github.com/settings/tokens](https://github.com/settings/tokens)
 
 ---
 
-## 👨‍💻 Author
+## 📄 License
 
-Made by [Paras Chauhan](https://github.com/Paras1Chauhan)
+MIT License
+
+---
+
+*Made with ❤️ by [Paras1Chauhan](https://github.com/Paras1Chauhan)*

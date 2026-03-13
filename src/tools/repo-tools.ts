@@ -1,65 +1,178 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { listRepos, getRepo, updateRepo, deleteRepo, setRepoVisibility } from "../services/github.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { octokit, getAuthenticatedUser, handleGitHubError } from '../services/github.js';
 
-export function registerRepoTools(server: McpServer, getToken: () => string, getUsername: () => string): void {
+export function registerRepoTools(server: McpServer) {
 
-  server.registerTool("github_list_repos", {
-    title: "List GitHub Repos",
-    description: "List all repositories for a GitHub user.",
-    inputSchema: z.object({ username: z.string().optional() }).strict(),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, async ({ username }) => {
-    const user = username || getUsername();
-    const repos = await listRepos(getToken(), user);
-    const lines = repos.map((r) => `• **${r.name}** [${r.visibility}] ${r.language ? `(${r.language})` : ""} ⭐${r.stargazers_count}\n  ${r.description || "_No description_"}`);
-    return { content: [{ type: "text" as const, text: `## ${user}'s Repos (${repos.length})\n\n${lines.join("\n\n")}` }] };
-  });
+  // List repos
+  server.tool(
+    'github_list_repos',
+    'List all repositories for a GitHub user',
+    { username: z.string().optional().describe('GitHub username (defaults to authenticated user)') },
+    async ({ username }) => {
+      try {
+        const { data } = username
+          ? await octokit.repos.listForUser({ username, per_page: 100 })
+          : await octokit.repos.listForAuthenticatedUser({ per_page: 100 });
+        const repos = data.map(r => ({
+          name: r.name,
+          description: r.description,
+          language: r.language,
+          stars: r.stargazers_count,
+          private: r.private,
+          url: r.html_url,
+          topics: r.topics,
+        }));
+        return { content: [{ type: 'text' as const, text: JSON.stringify(repos, null, 2) }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 
-  server.registerTool("github_get_repo", {
-    title: "Get GitHub Repo Details",
-    description: "Get detailed info about a specific repository.",
-    inputSchema: z.object({ repo: z.string(), owner: z.string().optional() }).strict(),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, async ({ repo, owner }) => {
-    const data = await getRepo(getToken(), owner || getUsername(), repo);
-    const text = `## ${data.full_name}\n- **Description**: ${data.description || "_none_"}\n- **Language**: ${data.language || "_none_"}\n- **Visibility**: ${data.visibility}\n- **Stars**: ${data.stargazers_count} | **Forks**: ${data.forks_count}\n- **Topics**: ${data.topics?.join(", ") || "_none_"}\n- **URL**: ${data.html_url}`;
-    return { content: [{ type: "text" as const, text }] };
-  });
+  // Get repo details
+  server.tool(
+    'github_get_repo',
+    'Get detailed information about a specific repository',
+    {
+      repo: z.string().describe('Repository name'),
+      owner: z.string().optional().describe('Repo owner (defaults to authenticated user)'),
+    },
+    async ({ repo, owner }) => {
+      try {
+        const user = owner || (await getAuthenticatedUser()).login;
+        const { data } = await octokit.repos.get({ owner: user, repo });
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({
+            name: data.name,
+            description: data.description,
+            language: data.language,
+            stars: data.stargazers_count,
+            forks: data.forks_count,
+            private: data.private,
+            topics: data.topics,
+            url: data.html_url,
+            default_branch: data.default_branch,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+          }, null, 2) }],
+        };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 
-  server.registerTool("github_update_repo", {
-    title: "Update GitHub Repo",
-    description: "Update a repo's name, description, or topics.",
-    inputSchema: z.object({
+  // Update repo
+  server.tool(
+    'github_update_repo',
+    'Update repo name, description, or topics',
+    {
+      repo: z.string().describe('Current repository name'),
+      owner: z.string().optional(),
+      new_name: z.string().optional().describe('New repository name'),
+      description: z.string().optional().describe('New description'),
+      topics: z.array(z.string()).optional().describe('Topics/tags'),
+    },
+    async ({ repo, owner, new_name, description, topics }) => {
+      try {
+        const user = owner || (await getAuthenticatedUser()).login;
+        if (new_name || description !== undefined) {
+          await octokit.repos.update({
+            owner: user, repo,
+            ...(new_name && { name: new_name }),
+            ...(description !== undefined && { description }),
+          });
+        }
+        if (topics) {
+          await octokit.repos.replaceAllTopics({ owner: user, repo: new_name || repo, names: topics });
+        }
+        return { content: [{ type: 'text' as const, text: `Repo '${repo}' updated successfully.` }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
+
+  // Set visibility
+  server.tool(
+    'github_set_repo_visibility',
+    'Make a repo public or private',
+    {
+      repo: z.string(),
+      private: z.boolean().describe('true = private, false = public'),
+      owner: z.string().optional(),
+    },
+    async ({ repo, private: isPrivate, owner }) => {
+      try {
+        const user = owner || (await getAuthenticatedUser()).login;
+        await octokit.repos.update({ owner: user, repo, private: isPrivate });
+        return { content: [{ type: 'text' as const, text: `Repo '${repo}' is now ${isPrivate ? 'private' : 'public'}.` }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
+
+  // Delete repo
+  server.tool(
+    'github_delete_repo',
+    'Permanently delete a repository (requires confirm=true)',
+    {
       repo: z.string(),
       owner: z.string().optional(),
-      new_name: z.string().optional(),
-      description: z.string().max(350).optional(),
-      topics: z.array(z.string()).optional(),
-    }).strict(),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  }, async ({ repo, owner, new_name, description, topics }) => {
-    const updated = await updateRepo(getToken(), owner || getUsername(), repo, { name: new_name, description, topics });
-    return { content: [{ type: "text" as const, text: `✅ Repo updated!\n- Name: ${updated.name}\n- Description: ${updated.description}\n- URL: ${updated.html_url}` }] };
-  });
+      confirm: z.boolean().describe('Must be true to proceed'),
+    },
+    async ({ repo, owner, confirm }) => {
+      if (!confirm) return { content: [{ type: 'text' as const, text: 'Deletion cancelled. Pass confirm=true to proceed.' }] };
+      try {
+        const user = owner || (await getAuthenticatedUser()).login;
+        await octokit.repos.delete({ owner: user, repo });
+        return { content: [{ type: 'text' as const, text: `Repo '${repo}' permanently deleted.` }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 
-  server.registerTool("github_set_repo_visibility", {
-    title: "Set Repo Visibility",
-    description: "Make a repo public or private.",
-    inputSchema: z.object({ repo: z.string(), owner: z.string().optional(), private: z.boolean() }).strict(),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-  }, async ({ repo, owner, private: isPrivate }) => {
-    const updated = await setRepoVisibility(getToken(), owner || getUsername(), repo, isPrivate);
-    return { content: [{ type: "text" as const, text: `✅ **${updated.name}** is now **${isPrivate ? "private 🔒" : "public 🌍"}**` }] };
-  });
+  // Create repo
+  server.tool(
+    'github_create_repo',
+    'Create a new GitHub repository',
+    {
+      name: z.string().describe('Repository name'),
+      description: z.string().optional(),
+      private: z.boolean().optional().default(false),
+      auto_init: z.boolean().optional().default(true),
+    },
+    async ({ name, description, private: isPrivate, auto_init }) => {
+      try {
+        const { data } = await octokit.repos.createForAuthenticatedUser({
+          name, description, private: isPrivate, auto_init,
+        });
+        return { content: [{ type: 'text' as const, text: `Repository created: ${data.html_url}` }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 
-  server.registerTool("github_delete_repo", {
-    title: "Delete GitHub Repo",
-    description: "⚠️ PERMANENTLY delete a repository. Cannot be undone.",
-    inputSchema: z.object({ repo: z.string(), owner: z.string().optional(), confirm: z.literal(true) }).strict(),
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
-  }, async ({ repo, owner, confirm: _ }) => {
-    await deleteRepo(getToken(), owner || getUsername(), repo);
-    return { content: [{ type: "text" as const, text: `🗑️ Repo **${repo}** permanently deleted.` }] };
-  });
+  // List branches
+  server.tool(
+    'github_list_branches',
+    'List all branches in a repository',
+    {
+      repo: z.string(),
+      owner: z.string().optional(),
+    },
+    async ({ repo, owner }) => {
+      try {
+        const user = owner || (await getAuthenticatedUser()).login;
+        const { data } = await octokit.repos.listBranches({ owner: user, repo });
+        return { content: [{ type: 'text' as const, text: JSON.stringify(data.map(b => b.name), null, 2) }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text' as const, text: `Error: ${handleGitHubError(e)}` }], isError: true };
+      }
+    }
+  );
 }
