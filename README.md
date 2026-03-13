@@ -1,6 +1,6 @@
 # 🔌 GitHub MCP Server v2.0
 
-> A powerful Model Context Protocol (MCP) server for **GitHub** and **Google Calendar** automation — built with TypeScript
+> A powerful Model Context Protocol (MCP) server for **GitHub** automation — built with TypeScript
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
@@ -9,7 +9,7 @@
 
 ---
 
-## ✨ Tools (14 total)
+## ✨ Tools (13 total)
 
 ### 🗂️ Repo Tools
 | Tool | Description |
@@ -35,13 +35,6 @@
 |---|---|
 | `github_get_profile` | View your GitHub profile |
 | `github_update_profile` | Update bio, location, website, Twitter |
-
-### 📅 Google Calendar Tools
-| Tool | Description |
-|---|---|
-| `calendar_list_events` | List upcoming calendar events |
-| `calendar_create_meeting` | Create a meeting with Google Meet link |
-| `calendar_delete_event` | Delete an event by ID |
 
 ---
 
@@ -71,8 +64,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
       "args": ["C:\\Users\\YourName\\github-mcp-server\\dist\\index.js"],
       "env": {
         "GITHUB_TOKEN": "ghp_your_token_here",
-        "GITHUB_USERNAME": "YourUsername",
-        "GOOGLE_ACCESS_TOKEN": "your_google_token_here"
+        "GITHUB_USERNAME": "YourUsername"
       }
     }
   }

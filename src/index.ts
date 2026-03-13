@@ -3,7 +3,6 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { registerRepoTools } from './tools/repo-tools.js';
 import { registerFileTools } from './tools/file-tools.js';
 import { registerProfileTools } from './tools/profile-tools.js';
-import { registerCalendarTools } from './tools/calendar-tools.js';
 
 const server = new McpServer({
   name: 'github-mcp-server',
@@ -13,7 +12,6 @@ const server = new McpServer({
 registerRepoTools(server);
 registerFileTools(server);
 registerProfileTools(server);
-registerCalendarTools(server);
 
 async function main() {
   const transport = new StdioServerTransport();
