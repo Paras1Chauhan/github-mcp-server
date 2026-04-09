@@ -1,84 +1,40 @@
-# 🔌 GitHub MCP Server v2.0
+# GitHub MCP Server
 
-> A powerful Model Context Protocol (MCP) server for **GitHub** automation — built with TypeScript
+> A powerful Model Context Protocol (MCP) server that lets Claude AI directly manage your GitHub — create repos, push files, generate READMEs, manage visibility, update your profile and more — all via natural language.
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-![MCP](https://img.shields.io/badge/MCP-SDK-blueviolet?style=flat-square)
-![GitHub API](https://img.shields.io/badge/GitHub-API-181717?style=flat-square&logo=github)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodejs&logoColor=white) ![MCP SDK](https://img.shields.io/badge/MCP%20SDK-555555?style=for-the-badge&logo=mcpsdk&logoColor=white) ![Octokit REST API](https://img.shields.io/badge/Octokit%20REST%20API-555555?style=for-the-badge&logo=octokitrestapi&logoColor=white) ![Zod](https://img.shields.io/badge/Zod-555555?style=for-the-badge&logo=zod&logoColor=white)
 
----
+## 📖 About
 
-## ✨ Tools (13 total)
+A powerful Model Context Protocol (MCP) server that lets Claude AI directly manage your GitHub — create repos, push files, generate READMEs, manage visibility, update your profile and more — all via natural language.
 
-### 🗂️ Repo Tools
-| Tool | Description |
-|---|---|
-| `github_list_repos` | List all repos for any user |
-| `github_get_repo` | Get detailed repo info |
-| `github_create_repo` | Create a new repo |
-| `github_update_repo` | Rename, add description & topics |
-| `github_set_repo_visibility` | Make repo public or private |
-| `github_delete_repo` | Permanently delete a repo |
-| `github_list_branches` | List all branches |
+## ✨ Features
 
-### 📁 File Tools
-| Tool | Description |
-|---|---|
-| `github_read_file` | Read any file from a repo |
-| `github_write_file` | Create or update a single file |
-| `github_push_files` | Push multiple files in one commit (Git Trees API) |
-| `github_create_repo_readme` | Auto-generate a professional README |
+- 13 tools across repo, file & profile management
+- Create, update, delete and list GitHub repositories
+- Read & write files, push multiple files in one commit
+- Auto-generate professional READMEs via AI
+- Update GitHub profile bio, location, website & Twitter
+- Uses stdio transport — fully MCP protocol compliant
+- Integrated with Claude Desktop on Windows & Mac
 
-### 👤 Profile Tools
-| Tool | Description |
-|---|---|
-| `github_get_profile` | View your GitHub profile |
-| `github_update_profile` | Update bio, location, website, Twitter |
+## 🛠️ Tech Stack
 
----
+- **TypeScript**
+- **Node.js**
+- **MCP SDK**
+- **Octokit REST API**
+- **Zod**
 
-## 🚀 Setup
+## 🚀 Getting Started
 
-### 1. Clone & Install
 ```bash
 git clone https://github.com/Paras1Chauhan/github-mcp-server.git
-cd github-mcp-server
-npm install
-```
-
-### 2. Build
-```bash
+cd github-mcp-server && npm install
 npm run build
+Add to Claude Desktop config with your GITHUB_TOKEN and GITHUB_USERNAME env vars
+Restart Claude Desktop and start using GitHub tools via natural language
 ```
-
-### 3. Configure Claude Desktop
-
-Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac):
-
-```json
-{
-  "mcpServers": {
-    "github": {
-      "command": "node",
-      "args": ["C:\\Users\\YourName\\github-mcp-server\\dist\\index.js"],
-      "env": {
-        "GITHUB_TOKEN": "ghp_your_token_here",
-        "GITHUB_USERNAME": "YourUsername"
-      }
-    }
-  }
-}
-```
-
-### 4. GitHub Token Scopes Required
-- ✅ `repo` — full repo access
-- ✅ `user` — update profile
-- ✅ `delete_repo` — delete repos
-
-Get your token → [github.com/settings/tokens](https://github.com/settings/tokens)
-
----
 
 ## 📄 License
 
